@@ -1,85 +1,101 @@
-#include "sort.h"
 #include <stdlib.h>
-
+#include "sort.h"
 /**
- * pow_10 - calculates a positive power of 10
- * @power: power of 10 to calculate
+ * csort2 - auxiliary function of radix sort
  *
- * Return: the corresponding power of 10
+ * @array: array of data to be sorted
+ * @buff: malloc buffer
+ * @size: size of data
+ * @lsd: Less significant digit
+ *
+ * Return: No Return
  */
-unsigned int pow_10(unsigned int power)
+void csort2(int *array, int **buff, int size, int lsd)
 {
-	unsigned int i, result;
+	int i, j, csize = 10, num;
+	int carr[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int carr2[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-	result = 1;
-	for (i = 0; i < power; i++)
-		result *= 10;
-	return (result);
+	for (i = 0; i < size; i++)
+	{
+		num = array[i];
+		for (j = 0; j < lsd; j++)
+			if (j > 0)
+				num = num / 10;
+		num = num % 10;
+		buff[num][carr[num]] = array[i];
+		carr[num] += 1;
+	}
+
+	for (i = 0, j = 0; i < csize; i++)
+	{
+		while (carr[i] > 0)
+		{
+			array[j] = buff[i][carr2[i]];
+			carr2[i] += 1, carr[i] -= 1;
+			j++;
+		}
+	}
+
+	print_array(array, size);
 }
-
 /**
- * count_sort - sorts an array of integers in ascending order at a specific
- * digit location using the Counting sort algorithm
- * @array: array to sort
- * @size: size of the array to sort
- * @digit: digit to sort by
+ * csort - auxiliary function of radix sort
  *
- * Return: 1 if there is a need to keep sorting, 0 if not
+ * @array: array of data to be sorted
+ * @size: size of data
+ * @lsd: Less significant digit
+ *
+ * Return: No Return
  */
-unsigned int count_sort(int *array, size_t size, unsigned int digit)
+void csort(int *array, int size, int lsd)
 {
-	int i, count[10] = {0};
-	int *copy = NULL;
-	size_t j, temp, total = 0;
-	unsigned int dp1, dp2, sort = 0;
+	int carr[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	int i, j, num, csize = 10, **buff;
 
-	dp2 = pow_10(digit - 1);
-	dp1 = dp2 * 10;
-	copy = malloc(sizeof(int) * size);
-	if (copy == NULL)
-		exit(1);
-	for (j = 0; j < size; j++)
+	for (i = 0; i < size; i++)
 	{
-		copy[j] = array[j];
-		if (array[j] / dp1 != 0)
-			sort = 1;
+		num = array[i];
+		for (j = 0; j < lsd; j++)
+			if (j > 0)
+				num = num / 10;
+		num = num % 10;
+		carr[num] += 1;
 	}
-	for (i = 0; i < 10 ; i++)
-		count[i] = 0;
-	for (j = 0; j < size; j++)
-		count[(array[j] % dp1) / dp2] += 1;
-	for (i = 0; i < 10; i++)
-	{
-		temp = count[i];
-		count[i] = total;
-		total += temp;
-	}
-	for (j = 0; j < size; j++)
-	{
-		array[count[(copy[j] % dp1) / dp2]] = copy[j];
-		count[(copy[j] % dp1) / dp2] += 1;
-	}
-	free(copy);
-	return (sort);
+
+	if (carr[0] == size)
+		return;
+
+	buff = malloc(sizeof(int *) * 10);
+	if (!buff)
+		return;
+
+	for (i = 0; i < csize; i++)
+		if (carr[i] != 0)
+			buff[i] = malloc(sizeof(int) * carr[i]);
+
+
+	csort2(array, buff, size, lsd);
+
+	csort(array, size, lsd + 1);
+
+	for (i = 0; i < csize; i++)
+		if (carr[i] > 0)
+			free(buff[i]);
+	free(buff);
 }
-
 /**
- * radix_sort - sorts an array of integers in ascending order using
- * the Radix sort algorithm
- * @array: array to sort
- * @size: size of the array
+ * radix_sort - sorts an array of integers in ascending order using the Radix
+ * sort algorithm
  *
- * Return: void
+ * @array: array of data to be sorted
+ * @size: size of data
+ *
+ * Return: No Return
  */
 void radix_sort(int *array, size_t size)
 {
-	unsigned int i, sort = 1;
-
-	if (array == NULL || size < 2)
+	if (size < 2)
 		return;
-	for (i = 1; sort == 1; i++)
-	{
-		sort = count_sort(array, size, i);
-		print_array(array, size);
-	}
+	csort(array, size, 1);
 }
